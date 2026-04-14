@@ -1,0 +1,47 @@
+[
+  {
+    "id": "tidal",
+    "name": "Tidal",
+    "version": "1.0",
+    "author": "Melo",
+    "description": "Search and stream from Tidal in lossless and Hi-Res quality via proxy instances",
+    "url": "https://raw.githubusercontent.com/LumeraD3v/melo-extensions/main/tidal.js",
+    "capabilities": ["search", "stream", "lyrics", "download"]
+  },
+  {
+    "id": "qobuz",
+    "name": "Qobuz",
+    "version": "1.0",
+    "author": "Melo",
+    "description": "Search and stream from Qobuz in up to 24-bit/192kHz quality via proxy APIs",
+    "url": "https://raw.githubusercontent.com/LumeraD3v/melo-extensions/main/qobuz.js",
+    "capabilities": ["search", "stream", "lyrics", "download"]
+  },
+  {
+    "id": "deezer",
+    "name": "Deezer",
+    "version": "1.0",
+    "author": "Melo",
+    "description": "Search and stream from Deezer in FLAC quality via MusicDL proxy",
+    "url": "https://raw.githubusercontent.com/LumeraD3v/melo-extensions/main/deezer.js",
+    "capabilities": ["search", "stream", "lyrics", "download"]
+  },
+  {
+    "id": "ytmusic",
+    "name": "YouTube Music",
+    "version": "1.0",
+    "author": "Melo",
+    "description": "Search and stream from YouTube Music via Piped instances",
+    "url": "https://raw.githubusercontent.com/LumeraD3v/melo-extensions/main/ytmusic.js",
+    "capabilities": ["search", "stream", "lyrics"]
+  },
+  {
+    "id": "lyrics",
+    "name": "Lyrics (Multi-Source)",
+    "version": "1.0",
+    "author": "Melo",
+    "description": "Synced lyrics from LRCLIB, Musixmatch, Apple Music, NetEase, QQ Music",
+    "url": "https://raw.githubusercontent.com/LumeraD3v/melo-extensions/main/lyrics.js",
+    "capabilities": ["lyrics"]
+  }
+]
