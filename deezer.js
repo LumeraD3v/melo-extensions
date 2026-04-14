@@ -78,7 +78,7 @@ async function deezerApi(endpoint) {
   throw new Error('Deezer API error');
 }
 
-const extension = {
+const meloExtension = {
   async search(query, page) {
     const encoded = encodeURIComponent(query);
     const [tracksRes, albumsRes, artistsRes] = await Promise.all([

@@ -150,7 +150,7 @@ function mapChannelItem(item) {
   };
 }
 
-const extension = {
+const meloExtension = {
   async search(query, page) {
     const encoded = encodeURIComponent(query);
 

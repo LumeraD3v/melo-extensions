@@ -169,7 +169,7 @@ async function tryQQMusic(title, artist, duration) {
   return null;
 }
 
-const extension = {
+const meloExtension = {
   async getLyrics(trackId, title, artist, album, duration) {
     // Cascade through all sources (same order as SpotiFLAC lyrics.go)
     const providers = [
