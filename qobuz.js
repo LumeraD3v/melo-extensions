@@ -92,8 +92,43 @@ var meloExtension = {
   },
 
   async getArtists() { return []; },
-  async getArtistAlbums(id) { return []; },
-  async getArtistTopTracks(id) { return []; },
+
+  async getArtistAlbums(id) {
+    // Search by artist name/id and extract unique albums
+    try {
+      var data = await dabGet('/search?q=' + encodeURIComponent(id) + '&type=tracks&limit=50');
+      var rawTracks = data.tracks || [];
+      var seen = {};
+      var albums = [];
+      for (var i = 0; i < rawTracks.length; i++) {
+        var t = rawTracks[i];
+        if (t.albumId && !seen[t.albumId] && String(t.artistId) === String(id) || t.artist === id) {
+          seen[t.albumId] = true;
+          albums.push({
+            id: String(t.albumId),
+            title: t.albumTitle || '',
+            name: t.albumTitle || '',
+            artist: t.artist || '',
+            artistId: t.artistId ? String(t.artistId) : '',
+            cover: t.albumCover || null,
+            year: t.releaseDate ? parseInt(t.releaseDate.substring(0, 4)) : 0,
+            genre: t.genre || '',
+            trackCount: 0
+          });
+        }
+      }
+      return albums;
+    } catch (e) { return []; }
+  },
+
+  async getArtistTopTracks(id) {
+    // Search by artist name/id and return matching tracks
+    try {
+      var data = await dabGet('/search?q=' + encodeURIComponent(id) + '&type=tracks&limit=20');
+      var rawTracks = data.tracks || [];
+      return rawTracks.map(mapTrack).filter(function(t) { return t !== null; });
+    } catch (e) { return []; }
+  },
 
   async getStreamUrl(trackId, quality) {
     var q = quality || '27';

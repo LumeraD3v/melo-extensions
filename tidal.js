@@ -161,10 +161,13 @@ var meloExtension = {
     try {
       var data = await tidalGet('/artist/?f=' + id);
       var albumItems = [];
-      if (data && data.data && data.data.albums && data.data.albums.items) {
-        albumItems = data.data.albums.items;
-      } else if (data && data.data && data.data.items) {
-        albumItems = data.data.items;
+      // Response: {albums: [...], tracks: [...]} at top level
+      if (data && data.albums && Array.isArray(data.albums)) {
+        albumItems = data.albums;
+      } else if (data && data.data && data.data.albums && Array.isArray(data.data.albums)) {
+        albumItems = data.data.albums;
+      } else if (data && data.albums && data.albums.items) {
+        albumItems = data.albums.items;
       }
       return albumItems.map(mapAlbum).filter(function(a) { return a !== null; });
     } catch (e) { return []; }
@@ -174,12 +177,15 @@ var meloExtension = {
     try {
       var data = await tidalGet('/artist/?f=' + id);
       var trackItems = [];
-      if (data && data.data && data.data.tracks && data.data.tracks.items) {
-        trackItems = data.data.tracks.items;
-      } else if (data && data.data && data.data.topTracks) {
-        trackItems = data.data.topTracks;
+      // Response: {albums: [...], tracks: [...]} at top level
+      if (data && data.tracks && Array.isArray(data.tracks)) {
+        trackItems = data.tracks;
+      } else if (data && data.data && data.data.tracks && Array.isArray(data.data.tracks)) {
+        trackItems = data.data.tracks;
+      } else if (data && data.tracks && data.tracks.items) {
+        trackItems = data.tracks.items;
       }
-      return trackItems.map(mapTrack).filter(function(t) { return t !== null; });
+      return trackItems.slice(0, 20).map(mapTrack).filter(function(t) { return t !== null; });
     } catch (e) { return []; }
   },
 
