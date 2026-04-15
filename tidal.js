@@ -169,7 +169,7 @@ function extractStreamUrl(manifest) {
   return null;
 }
 
-const meloExtension = {
+var meloExtension = {
   async search(query, page) {
     const encoded = encodeURIComponent(query);
     // Fetch tracks, albums, artists in parallel via Promise.all

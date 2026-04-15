@@ -114,7 +114,7 @@ async function getStreamUrlRace(trackId, quality) {
   return Promise.any(promises);
 }
 
-const meloExtension = {
+var meloExtension = {
   async search(query, page) {
     const limit = 20;
     const [tracksRes, albumsRes, artistsRes] = await Promise.all([
