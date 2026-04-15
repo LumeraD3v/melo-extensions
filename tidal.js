@@ -73,20 +73,73 @@ function mapTrack(t) {
   };
 }
 
+function mapAlbum(a) {
+  if (!a || !a.id) return null;
+  var artistName = '';
+  if (a.artist && a.artist.name) artistName = a.artist.name;
+  else if (a.artists && a.artists.length > 0) artistName = a.artists[0].name || '';
+  return {
+    id: String(a.id),
+    title: a.title || '',
+    name: a.title || '',
+    artist: artistName,
+    artistId: a.artist ? String(a.artist.id || '') : '',
+    cover: a.cover ? getCoverUrl(a.cover, 640) : null,
+    year: a.releaseDate ? parseInt(a.releaseDate.substring(0, 4)) : 0,
+    genre: '',
+    trackCount: a.numberOfTracks || 0,
+    releaseDate: a.releaseDate || ''
+  };
+}
+
+function mapArtist(a) {
+  if (!a || !a.id) return null;
+  return {
+    id: String(a.id),
+    name: a.name || '',
+    image: a.picture ? getCoverUrl(a.picture, 480) : null
+  };
+}
+
 var meloExtension = {
   async search(query, page) {
     var encoded = encodeURIComponent(query);
-    var data = await tidalGet('/search/?s=' + encoded);
 
-    var items = [];
-    if (data && data.data && data.data.items) {
-      items = data.data.items;
-    } else if (data && data.items) {
-      items = data.items;
+    // Search tracks, albums, and artists in parallel
+    var trackData = null;
+    var albumData = null;
+    var artistData = null;
+
+    try { trackData = await tidalGet('/search/?s=' + encoded); } catch(e) {}
+    try { albumData = await tidalGet('/search/?al=' + encoded); } catch(e) {}
+    try { artistData = await tidalGet('/search/?a=' + encoded); } catch(e) {}
+
+    // Parse tracks from ?s= response (data.data.items)
+    var trackItems = [];
+    if (trackData && trackData.data && trackData.data.items) trackItems = trackData.data.items;
+    else if (trackData && trackData.items) trackItems = trackData.items;
+
+    // Parse albums from ?al= response (data.data.albums.items)
+    var albumItems = [];
+    if (albumData && albumData.data) {
+      var ad = albumData.data;
+      if (ad.albums && ad.albums.items) albumItems = ad.albums.items;
+      else if (ad.items) albumItems = ad.items;
     }
 
-    var tracks = items.map(mapTrack).filter(function(t) { return t !== null; });
-    return { tracks: tracks, albums: [], artists: [], playlists: [] };
+    // Parse artists from ?a= response (data.data.artists.items)
+    var artistItems = [];
+    if (artistData && artistData.data) {
+      var ard = artistData.data;
+      if (ard.artists && ard.artists.items) artistItems = ard.artists.items;
+      else if (ard.items) artistItems = ard.items;
+    }
+
+    var tracks = trackItems.map(mapTrack).filter(function(t) { return t !== null; });
+    var albums = albumItems.map(mapAlbum).filter(function(a) { return a !== null; });
+    var artists = artistItems.map(mapArtist).filter(function(a) { return a !== null; });
+
+    return { tracks: tracks, albums: albums, artists: artists, playlists: [] };
   },
 
   async getAlbums() { return []; },
@@ -103,8 +156,32 @@ var meloExtension = {
   },
 
   async getArtists() { return []; },
-  async getArtistAlbums(id) { return []; },
-  async getArtistTopTracks(id) { return []; },
+
+  async getArtistAlbums(id) {
+    try {
+      var data = await tidalGet('/artist/?f=' + id);
+      var albumItems = [];
+      if (data && data.data && data.data.albums && data.data.albums.items) {
+        albumItems = data.data.albums.items;
+      } else if (data && data.data && data.data.items) {
+        albumItems = data.data.items;
+      }
+      return albumItems.map(mapAlbum).filter(function(a) { return a !== null; });
+    } catch (e) { return []; }
+  },
+
+  async getArtistTopTracks(id) {
+    try {
+      var data = await tidalGet('/artist/?f=' + id);
+      var trackItems = [];
+      if (data && data.data && data.data.tracks && data.data.tracks.items) {
+        trackItems = data.data.tracks.items;
+      } else if (data && data.data && data.data.topTracks) {
+        trackItems = data.data.topTracks;
+      }
+      return trackItems.map(mapTrack).filter(function(t) { return t !== null; });
+    } catch (e) { return []; }
+  },
 
   async getStreamUrl(trackId, quality) {
     var q = quality || 'LOSSLESS';
@@ -150,5 +227,23 @@ var meloExtension = {
   },
 
   async getCoverArt(albumId) { return ''; },
-  async getFeatured() { return []; }
+
+  async getFeatured() {
+    try {
+      var data = await tidalGet('/search/?al=new+releases+2026');
+      var albumItems = [];
+      if (data && data.data) {
+        var ad = data.data;
+        if (ad.albums && ad.albums.items) albumItems = ad.albums.items;
+        else if (ad.items) albumItems = ad.items;
+      }
+      if (albumItems.length === 0) {
+        data = await tidalGet('/search/?al=top+hits');
+        if (data && data.data && data.data.albums && data.data.albums.items) {
+          albumItems = data.data.albums.items;
+        }
+      }
+      return albumItems.slice(0, 15).map(mapAlbum).filter(function(a) { return a !== null; });
+    } catch (e) { return []; }
+  }
 };

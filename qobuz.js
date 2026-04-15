@@ -97,5 +97,31 @@ var meloExtension = {
   },
 
   async getCoverArt(albumId) { return ''; },
-  async getFeatured() { return []; }
+
+  async getFeatured() {
+    try {
+      var data = await dabGet('/search?q=top+hits+2026&type=tracks&limit=30');
+      var tracks = data.tracks || [];
+      var seen = {};
+      var albums = [];
+      for (var i = 0; i < tracks.length; i++) {
+        var t = tracks[i];
+        if (t.albumId && !seen[t.albumId]) {
+          seen[t.albumId] = true;
+          albums.push({
+            id: String(t.albumId),
+            title: t.albumTitle || '',
+            name: t.albumTitle || '',
+            artist: t.artist || '',
+            artistId: t.artistId ? String(t.artistId) : '',
+            cover: t.albumCover || null,
+            year: t.releaseDate ? parseInt(t.releaseDate.substring(0, 4)) : 0,
+            genre: t.genre || '',
+            trackCount: 0
+          });
+        }
+      }
+      return albums.slice(0, 15);
+    } catch (e) { return []; }
+  }
 };
