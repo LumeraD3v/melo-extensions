@@ -98,15 +98,35 @@ var meloExtension = {
   async getArtists() { return []; },
 
   async getArtistAlbums(id) {
-    // Search by artist name/id and extract unique albums
     try {
-      var data = await dabGet('/search?q=' + encodeURIComponent(id) + '&type=tracks&limit=50');
+      // id may be "numericId|artistName" — use name for dabmusic search
+      var parts = id.split('|');
+      var artistId = parts[0];
+      var artistName = parts.length > 1 ? parts[1] : id;
+
+      var data = await dabGet('/search?q=' + encodeURIComponent(artistName) + '&type=tracks&limit=50');
       var rawTracks = data.tracks || [];
+
+      // Filter: only tracks by this artist
+      var matchingTracks = rawTracks.filter(function(t) {
+        return String(t.artistId) === String(artistId) || t.artist === artistName;
+      });
+
+      // If no exact match, use all results (id was probably the name)
+      if (matchingTracks.length === 0) matchingTracks = rawTracks;
+
+      // Extract unique albums, skip singles (only 1 track with that albumId)
+      var albumTrackCount = {};
+      for (var i = 0; i < matchingTracks.length; i++) {
+        var aid = matchingTracks[i].albumId;
+        if (aid) albumTrackCount[aid] = (albumTrackCount[aid] || 0) + 1;
+      }
+
       var seen = {};
       var albums = [];
-      for (var i = 0; i < rawTracks.length; i++) {
-        var t = rawTracks[i];
-        if (t.albumId && !seen[t.albumId] && String(t.artistId) === String(id) || t.artist === id) {
+      for (var j = 0; j < matchingTracks.length; j++) {
+        var t = matchingTracks[j];
+        if (t.albumId && !seen[t.albumId]) {
           seen[t.albumId] = true;
           albums.push({
             id: String(t.albumId),
@@ -117,20 +137,32 @@ var meloExtension = {
             cover: t.albumCover || null,
             year: t.releaseDate ? parseInt(t.releaseDate.substring(0, 4)) : 0,
             genre: t.genre || '',
-            trackCount: 0
+            trackCount: albumTrackCount[t.albumId] || 0
           });
         }
       }
+
+      // Sort by year descending
+      albums.sort(function(a, b) { return (b.year || 0) - (a.year || 0); });
       return albums;
     } catch (e) { return []; }
   },
 
   async getArtistTopTracks(id) {
-    // Search by artist name/id and return matching tracks
     try {
-      var data = await dabGet('/search?q=' + encodeURIComponent(id) + '&type=tracks&limit=20');
+      var parts = id.split('|');
+      var artistId = parts[0];
+      var artistName = parts.length > 1 ? parts[1] : id;
+
+      var data = await dabGet('/search?q=' + encodeURIComponent(artistName) + '&type=tracks&limit=20');
       var rawTracks = data.tracks || [];
-      return rawTracks.map(mapTrack).filter(function(t) { return t !== null; });
+
+      var matching = rawTracks.filter(function(t) {
+        return String(t.artistId) === String(artistId) || t.artist === artistName;
+      });
+      if (matching.length === 0) matching = rawTracks;
+
+      return matching.map(mapTrack).filter(function(t) { return t !== null; });
     } catch (e) { return []; }
   },
 

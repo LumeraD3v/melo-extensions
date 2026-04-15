@@ -159,33 +159,48 @@ var meloExtension = {
 
   async getArtistAlbums(id) {
     try {
-      var data = await tidalGet('/artist/?f=' + id);
+      var artistId = id.indexOf('|') > -1 ? id.split('|')[0] : id;
+      var data = await tidalGet('/artist/?f=' + artistId);
       var albumItems = [];
-      // Response: {albums: [...], tracks: [...]} at top level
-      if (data && data.albums && Array.isArray(data.albums)) {
-        albumItems = data.albums;
-      } else if (data && data.data && data.data.albums && Array.isArray(data.data.albums)) {
-        albumItems = data.data.albums;
-      } else if (data && data.albums && data.albums.items) {
+
+      // albums is {items: [...]}
+      if (data && data.albums && data.albums.items) {
         albumItems = data.albums.items;
+      } else if (data && data.albums && Array.isArray(data.albums)) {
+        albumItems = data.albums;
       }
-      return albumItems.map(mapAlbum).filter(function(a) { return a !== null; });
+
+      // Filter: only albums with more than 1 track (excludes singles)
+      // Sort by release date newest first
+      return albumItems
+        .filter(function(a) { return a && (a.numberOfTracks || 0) > 1; })
+        .sort(function(a, b) {
+          return (b.releaseDate || '').localeCompare(a.releaseDate || '');
+        })
+        .map(mapAlbum)
+        .filter(function(a) { return a !== null; });
     } catch (e) { return []; }
   },
 
   async getArtistTopTracks(id) {
     try {
-      var data = await tidalGet('/artist/?f=' + id);
+      var artistId = id.indexOf('|') > -1 ? id.split('|')[0] : id;
+      var data = await tidalGet('/artist/?f=' + artistId);
       var trackItems = [];
-      // Response: {albums: [...], tracks: [...]} at top level
+
+      // tracks is a direct array
       if (data && data.tracks && Array.isArray(data.tracks)) {
         trackItems = data.tracks;
-      } else if (data && data.data && data.data.tracks && Array.isArray(data.data.tracks)) {
-        trackItems = data.data.tracks;
       } else if (data && data.tracks && data.tracks.items) {
         trackItems = data.tracks.items;
       }
-      return trackItems.slice(0, 20).map(mapTrack).filter(function(t) { return t !== null; });
+
+      // Sort by popularity, take top 10
+      return trackItems
+        .sort(function(a, b) { return (b.popularity || 0) - (a.popularity || 0); })
+        .slice(0, 10)
+        .map(mapTrack)
+        .filter(function(t) { return t !== null; });
     } catch (e) { return []; }
   },
 
