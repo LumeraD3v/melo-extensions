@@ -35,10 +35,48 @@ function mapTrack(t) {
 var meloExtension = {
   async search(query, page) {
     var encoded = encodeURIComponent(query);
-    var data = await dabGet('/search?q=' + encoded + '&type=tracks&limit=25');
+    var data = await dabGet('/search?q=' + encoded + '&type=tracks&limit=30');
 
-    var tracks = (data.tracks || []).map(mapTrack).filter(function(t) { return t !== null; });
-    return { tracks: tracks, albums: [], artists: [], playlists: [] };
+    var rawTracks = data.tracks || [];
+    var tracks = rawTracks.map(mapTrack).filter(function(t) { return t !== null; });
+
+    // Extract unique albums from track results
+    var seenAlbums = {};
+    var albums = [];
+    for (var i = 0; i < rawTracks.length; i++) {
+      var t = rawTracks[i];
+      if (t.albumId && !seenAlbums[t.albumId]) {
+        seenAlbums[t.albumId] = true;
+        albums.push({
+          id: String(t.albumId),
+          title: t.albumTitle || '',
+          name: t.albumTitle || '',
+          artist: t.artist || '',
+          artistId: t.artistId ? String(t.artistId) : '',
+          cover: t.albumCover || null,
+          year: t.releaseDate ? parseInt(t.releaseDate.substring(0, 4)) : 0,
+          genre: t.genre || '',
+          trackCount: 0
+        });
+      }
+    }
+
+    // Extract unique artists from track results
+    var seenArtists = {};
+    var artists = [];
+    for (var j = 0; j < rawTracks.length; j++) {
+      var tr = rawTracks[j];
+      if (tr.artistId && !seenArtists[tr.artistId]) {
+        seenArtists[tr.artistId] = true;
+        artists.push({
+          id: String(tr.artistId),
+          name: tr.artist || '',
+          image: null
+        });
+      }
+    }
+
+    return { tracks: tracks, albums: albums, artists: artists, playlists: [] };
   },
 
   async getAlbums() { return []; },
