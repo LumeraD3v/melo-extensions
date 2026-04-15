@@ -83,10 +83,14 @@ var meloExtension = {
 
   async getAlbumTracks(id) {
     try {
-      var data = await dabGet('/get?type=album&id=' + id);
-      if (data && data.tracks) {
-        return data.tracks.map(mapTrack).filter(function(t) { return t !== null; });
+      var data = await dabGet('/album?albumId=' + id);
+      var tracks = [];
+      if (data && data.album && data.album.tracks) {
+        tracks = data.album.tracks;
+      } else if (data && data.tracks) {
+        tracks = data.tracks;
       }
+      return tracks.map(mapTrack).filter(function(t) { return t !== null; });
     } catch (e) {}
     return [];
   },
